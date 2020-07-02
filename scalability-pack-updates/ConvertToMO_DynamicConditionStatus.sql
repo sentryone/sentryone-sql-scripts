@@ -6,6 +6,8 @@ NOTE:	Hash index BUCKET_COUNTs should be adjusted up from 4096 if needed.
 		SELECT COUNT(1) FROM DynamicConditionStatus;
 		I don't recommend lowering below 4096 even if they are much lower, to allow room for growth. Better too high than too low.
 		See: https://msdn.microsoft.com/en-us/library/dn494956(v=sql.120).aspx
+
+IMPORTANT: Key violation errors can sometimes occur when the data is moved into the new mem-opt table due to a bug in SQL Server. These errors are benign and can be ignored.
 */
 
 USE [SentryOne]
@@ -97,19 +99,21 @@ SET IDENTITY_INSERT [DynamicConditionStatus] ON
 GO
 
 INSERT INTO [dbo].[DynamicConditionStatus]
-           ([ID]
-		   ,[ConditionID]
-           ,[DynamicConditionID]
-           ,[ObjectID]
-           ,[CurrentEvaluationStartTimeUtc]
-           ,[LastEvaluationStartTimeUtc]
-           ,[LastEvaluationEndTimeUtc]
-           ,[LastEvaluationDurationTicks]
-           ,[LastEvaluationResults]
-           ,[LastEvaluationState]
-           ,[LastEvaluationException]
-           ,[DynamicConditionEvaluationResult]
-           ,[CurrentEvaluationType])
+	(
+	 [ID]
+	,[ConditionID]
+	,[DynamicConditionID]
+	,[ObjectID]
+	,[CurrentEvaluationStartTimeUtc]
+	,[LastEvaluationStartTimeUtc]
+	,[LastEvaluationEndTimeUtc]
+	,[LastEvaluationDurationTicks]
+	,[LastEvaluationResults]
+	,[LastEvaluationState]
+	,[LastEvaluationException]
+	,[DynamicConditionEvaluationResult]
+	,[CurrentEvaluationType]
+	)
 SELECT [ID]
       ,[ConditionID]
       ,[DynamicConditionID]
@@ -257,29 +261,29 @@ BEGIN
 	-- interfering with SELECT statements.
 	SET NOCOUNT ON;
 
-       IF NOT EXISTS
-       (
-              SELECT dbo.DynamicConditionDefinition.ID
-              FROM dbo.DynamicConditionDefinition
-              INNER JOIN deleted ON dbo.DynamicConditionDefinition.ConditionID = deleted.ConditionID
-       )
-       BEGIN
-              DELETE dbo.ObjectConditionAction
-              FROM dbo.ObjectConditionAction
-              INNER JOIN deleted ON dbo.ObjectConditionAction.ConditionTypeID = deleted.ConditionID
+	IF NOT EXISTS
+	(
+		SELECT dbo.DynamicConditionDefinition.ID
+		FROM dbo.DynamicConditionDefinition
+		INNER JOIN deleted ON dbo.DynamicConditionDefinition.ConditionID = deleted.ConditionID
+	)
+	BEGIN
+		DELETE dbo.ObjectConditionAction
+		FROM dbo.ObjectConditionAction
+		INNER JOIN deleted ON dbo.ObjectConditionAction.ConditionTypeID = deleted.ConditionID
 
-              DELETE dbo.SnoozeStatus
-              FROM dbo.SnoozeStatus
-              INNER JOIN deleted ON dbo.SnoozeStatus.ConditionID = deleted.ConditionID
+		DELETE dbo.SnoozeStatus
+		FROM dbo.SnoozeStatus
+		INNER JOIN deleted ON dbo.SnoozeStatus.ConditionID = deleted.ConditionID
 
-			  DELETE dbo.DynamicConditionDefinitionRefreshRequest
-              FROM dbo.DynamicConditionDefinitionRefreshRequest
-              INNER JOIN deleted ON dbo.DynamicConditionDefinitionRefreshRequest.ConditionID = deleted.ConditionID
+		DELETE dbo.DynamicConditionDefinitionRefreshRequest
+		FROM dbo.DynamicConditionDefinitionRefreshRequest
+		INNER JOIN deleted ON dbo.DynamicConditionDefinitionRefreshRequest.ConditionID = deleted.ConditionID
 
-			  DELETE dbo.DynamicConditionDefinitionArea
-              FROM dbo.DynamicConditionDefinitionArea
-              INNER JOIN deleted ON dbo.DynamicConditionDefinitionArea.ConditionID = deleted.ConditionID
-       END
+		DELETE dbo.DynamicConditionDefinitionArea
+		FROM dbo.DynamicConditionDefinitionArea
+		INNER JOIN deleted ON dbo.DynamicConditionDefinitionArea.ConditionID = deleted.ConditionID
+	END
 END
 GO
 
