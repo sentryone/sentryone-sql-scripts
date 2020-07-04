@@ -10,9 +10,13 @@ NOTE:	Hash index BUCKET_COUNTs should be adjusted up from 4096 if needed.
 	See: https://msdn.microsoft.com/en-us/library/dn494956(v=sql.120).aspx
 
 IMPORTANT: Key violation errors can sometimes occur when the data is moved into the new mem-opt table due to a bug in SQL Server. These errors are benign and can be ignored.
+
+DISCLAIMER: These updates are considered preview, and should be used at your own risk.
+
+Copyright 2020 SQL Sentry, LLC
 */
 
-USE [SentryOne]
+USE [SentryOne];
 GO
 
 /*** Only execute this section if the system hasn't already had the Scalability Pack (CCI + In-Mem) installed ***
