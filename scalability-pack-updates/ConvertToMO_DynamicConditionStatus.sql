@@ -1,11 +1,13 @@
-/*
-First "Snooze All For->1 Hour" from Configuration->Advisory Conditions node. (ACs will still log, but will not do any work)
+/*** Script to convert DynamicConditionStatus table from disk-based to memory-optimized to reduce contention and chance of deadlocks on busy systems ***
+
+FIRST: 	"Snooze All For->1 Hour" from Configuration->Advisory Conditions node. (ACs will still log, but will not do any work)
+	ACs will be un-snoozed automatically by the script.
 
 NOTE:	Hash index BUCKET_COUNTs should be adjusted up from 4096 if needed.
-		Set to 1.2 * the max rows expected in DynamicConditionStatus, rounded up to the next power of 2 (4096->8192->16384->32768).
+	Set to 1.2 * the max rows expected in DynamicConditionStatus, rounded up to the next power of 2 (4096->8192->16384->32768).
 		SELECT COUNT(1) FROM DynamicConditionStatus;
-		I don't recommend lowering below 4096 even if they are much lower, to allow room for growth. Better too high than too low.
-		See: https://msdn.microsoft.com/en-us/library/dn494956(v=sql.120).aspx
+	I don't recommend lowering below 4096 even if they are much lower, to allow room for growth. Better too high than too low.
+	See: https://msdn.microsoft.com/en-us/library/dn494956(v=sql.120).aspx
 
 IMPORTANT: Key violation errors can sometimes occur when the data is moved into the new mem-opt table due to a bug in SQL Server. These errors are benign and can be ignored.
 */
@@ -13,21 +15,22 @@ IMPORTANT: Key violation errors can sometimes occur when the data is moved into 
 USE [SentryOne]
 GO
 
-/*** Only execute this section if the system hasn't already had CCI + In-mem installed ***
- *** System Requirements are the same as CCI + In-mem ***
+/*** Only execute this section if the system hasn't already had the Scalability Pack (CCI + In-Mem) installed ***
+ *** System Requirements are the same as the Scalability Pack ***
 
 ALTER DATABASE [SentryOne] SET MEMORY_OPTIMIZED_ELEVATE_TO_SNAPSHOT = ON --will ensure procs won't break if RCSI is ever enabled.
 GO
 
---You will get an error if the following attempts to execute against master database
---Create mem-optimized filegroup in the default data dir
+--You will get an error if the following attempts to execute against master.
+--Create mem-optimized filegroup in the default data dir.
 ALTER DATABASE CURRENT ADD FILEGROUP [MemOptFG] CONTAINS MEMORY_OPTIMIZED_DATA
 GO
 
-DECLARE @sql nvarchar(max) = N'ALTER DATABASE CURRENT
-       ADD FILE (name=''MemOptData'', filename=' +
-       QUOTENAME(cast(SERVERPROPERTY('InstanceDefaultDataPath') as nvarchar(max)) + db_name() + N'_MemOptData', N'''') +
-             ') TO FILEGROUP [MemOptFG]'
+DECLARE @sql nvarchar(max) =
+	N'ALTER DATABASE CURRENT
+		ADD FILE (name=''MemOptData'', filename=' +
+		QUOTENAME(cast(SERVERPROPERTY('InstanceDefaultDataPath') as nvarchar(max)) + db_name() + N'_MemOptData', N'''') +
+		') TO FILEGROUP [MemOptFG]'
 select @sql;
 EXECUTE sp_executesql @sql;
 GO
@@ -332,14 +335,14 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
---*** IF THE 2 PROCS BELOW HAVE CHANGED, USE THE NEW VERSIONS INSTEAD OF THESE ***
+--*** IF THE 2 PROCS BELOW HAVE CHANGED, USE THE NEW VERSIONS INSTEAD ***
 
 CREATE PROCEDURE [dbo].[LogDynamicConditionStatusStart]
-@ConditionID UNIQUEIDENTIFIER,
-@DynamicConditionID INT,
-@ObjectID UNIQUEIDENTIFIER,
-@CurrentEvaluationStartTimeUtc DATETIME,
-@CurrentEvaluationType TINYINT
+	@ConditionID UNIQUEIDENTIFIER,
+	@DynamicConditionID INT,
+	@ObjectID UNIQUEIDENTIFIER,
+	@CurrentEvaluationStartTimeUtc DATETIME,
+	@CurrentEvaluationType TINYINT
 AS
 
 SET NOCOUNT ON
@@ -373,16 +376,16 @@ COMMIT TRANSACTION
 GO
 
 CREATE PROCEDURE [dbo].[LogDynamicConditionStatusEnd]
-@ConditionID UNIQUEIDENTIFIER,
-@DynamicConditionID INT,
-@ObjectID UNIQUEIDENTIFIER,
-@LastEvaluationStartTimeUtc DATETIME,
-@LastEvaluationEndTimeUtc DATETIME,
-@LastEvaluationDurationTicks BIGINT,
-@LastEvaluationResults NVARCHAR(MAX),
-@LastEvaluationState TINYINT,
-@DynamicConditionEvaluationResult TINYINT,
-@LastEvaluationException NVARCHAR(MAX)
+	@ConditionID UNIQUEIDENTIFIER,
+	@DynamicConditionID INT,
+	@ObjectID UNIQUEIDENTIFIER,
+	@LastEvaluationStartTimeUtc DATETIME,
+	@LastEvaluationEndTimeUtc DATETIME,
+	@LastEvaluationDurationTicks BIGINT,
+	@LastEvaluationResults NVARCHAR(MAX),
+	@LastEvaluationState TINYINT,
+	@DynamicConditionEvaluationResult TINYINT,
+	@LastEvaluationException NVARCHAR(MAX)
 AS
 
 SET NOCOUNT ON
