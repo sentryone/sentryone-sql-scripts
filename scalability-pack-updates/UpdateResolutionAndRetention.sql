@@ -8,6 +8,10 @@ USAGE:
 	- @MinDatapoints and @MaxDatapoints to affect chart range sizes
 	- @BaseRetentionHours and @ScaleFactor to affect data retention
 	- Optionally disable 2- and 3- day rollup tables (see notes inline below)
+
+DISCLAIMER: These updates are considered preview, and should be used at your own risk.
+
+Copyright 2020 SQL Sentry, LLC	
 */
 
 set nocount on;
