@@ -1,6 +1,9 @@
 /*** Script to enable Advisory Condition Evaluation Tracking ***
 
-IMPORTANT: SentryOne database MUST have a memory-optimized filegroup and the DynamicConditionStatus table MUST be memory-optimized.
+IMPORTANT:
+	- The SentryOne Scalability Pack must be installed first (partitioned CCI + In-mem OLTP)
+	  https://docs.sentryone.com/help/recommendations#scalabilitypack
+	- The DynamicConditionStatus table MUST be memory-optimized.
 
 DISCLAIMER: These updates are considered preview, and should be used at your own risk.
 
