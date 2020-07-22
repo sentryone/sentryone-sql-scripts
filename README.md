@@ -3,6 +3,15 @@ SQL scripts for the SentryOne database. Use caution when running these scripts t
 
 ## scalability-pack-updates
 
+### AdvisoryConditionEvalTrackingSchema-MovePABufferData.sql
+https://www.sentryone.com/blog/charting-custom-counters-in-sentryone
+
+### AdvisoryConditionEvalTrackingSchema.sql
+https://www.sentryone.com/blog/charting-custom-counters-in-sentryone
+
+### ConvertToMO_DynamicConditionStatus.sql
+https://www.sentryone.com/blog/charting-custom-counters-in-sentryone
+
 ### GetPerfDataTableUsagePct.sql
 See https://www.sentryone.com/blog/enabling-higher-resolution-performance-charts-in-sentryone
 
