@@ -45,7 +45,7 @@ GO
 */
 
 --First ensure that the table hasn't already been converted to memory-optimized:
-IF EXISTS (SELECT * FROM sys.tables WHERE name = 'DynamicConditionStatus' AND is_memory_optimized = 1)
+IF EXISTS (SELECT * FROM sys.tables WHERE name = N'DynamicConditionStatus' AND is_memory_optimized = 1)
   BEGIN
 	RAISERROR('DynamicConditionStatus already converted to memory-optimized!', 11, 1);
 	SET NOEXEC ON; --ensure rest of script will not execute.
