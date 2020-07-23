@@ -1,17 +1,21 @@
 /*** Script to convert DynamicConditionStatus table from disk-based to memory-optimized to reduce contention and chance of deadlocks on busy systems ***
 
-FIRST: 	"Snooze All For->1 Hour" from Configuration->Advisory Conditions node. (ACs will still log, but will not do any work)
+FIRST:
+	"Snooze All For->1 Hour" from Configuration->Advisory Conditions node. (ACs will still log, but will not do any work)
 	ACs will be un-snoozed automatically by the script.
 
-NOTE:	Hash index BUCKET_COUNTs should be adjusted up from 4096 if needed.
+NOTE:
+	Hash index BUCKET_COUNTs should be adjusted up from 4096 if needed.
 	Set to 1.2 * the max rows expected in DynamicConditionStatus, rounded up to the next power of 2 (4096->8192->16384->32768).
 		SELECT COUNT(1) FROM DynamicConditionStatus;
 	I don't recommend lowering below 4096 even if they are much lower, to allow room for growth. Better too high than too low.
 	See: https://msdn.microsoft.com/en-us/library/dn494956(v=sql.120).aspx
 
-IMPORTANT: Key violation errors can sometimes occur when the data is moved into the new mem-opt table due to a bug in SQL Server. These errors are benign and can be ignored.
+IMPORTANT:
+	Key violation errors can sometimes occur when the data is moved into the new mem-opt table due to a bug in SQL Server. These errors are benign and can be ignored.
 
-DISCLAIMER: These updates are considered preview, and should be used at your own risk.
+DISCLAIMER:
+	These updates are considered preview, and should be used at your own risk.
 
 Copyright 2020 SQL Sentry, LLC
 */
@@ -39,6 +43,41 @@ select @sql;
 EXECUTE sp_executesql @sql;
 GO
 */
+
+--First ensure that the table hasn't already been converted to memory-optimized:
+IF EXISTS (SELECT * FROM sys.tables WHERE name = 'DynamicConditionStatus' AND is_memory_optimized = 1)
+  BEGIN
+	RAISERROR('DynamicConditionStatus already converted to memory-optimized!', 11, 1);
+	SET NOEXEC ON; --ensure rest of script will not execute.
+  END
+GO
+
+--Kneecap existing procs so data won't be inserted by services while existing data is being moved into the new in-mem table,
+--which will cause key violations. New natively compiled procs will be created below, after insert has completed.
+ALTER PROCEDURE [dbo].[LogDynamicConditionStatusStart]
+	@ConditionID UNIQUEIDENTIFIER,
+	@DynamicConditionID INT,
+	@ObjectID UNIQUEIDENTIFIER,
+	@CurrentEvaluationStartTimeUtc DATETIME,
+	@CurrentEvaluationType TINYINT
+AS
+	RETURN;
+GO
+
+ALTER PROCEDURE [dbo].[LogDynamicConditionStatusEnd]
+	@ConditionID UNIQUEIDENTIFIER,
+	@DynamicConditionID INT,
+	@ObjectID UNIQUEIDENTIFIER,
+	@LastEvaluationStartTimeUtc DATETIME,
+	@LastEvaluationEndTimeUtc DATETIME,
+	@LastEvaluationDuratioUnTicks BIGINT,
+	@LastEvaluationResults NVARCHAR(MAX),
+	@LastEvaluationState TINYINT,
+	@DynamicConditionEvaluationResult TINYINT,
+	@LastEvaluationException NVARCHAR(MAX)
+AS
+	RETURN;
+GO
 
 EXEC sp_rename 'dbo.DynamicConditionStatus', 'DynamicConditionStatus_bak';
 GO
@@ -73,33 +112,6 @@ GO
 ALTER TABLE [DynamicConditionStatus]  
     ADD CONSTRAINT [IX_Unique]
     UNIQUE NONCLUSTERED HASH (ConditionID, ObjectID) WITH (BUCKET_COUNT = 4096);
-GO
-
---Kneecap existing procs so data won't be inserted by services while existing data is being moved into the new in-mem table,
---which will cause key violations. New natively compiled procs will be created below, after insert has completed.
-ALTER PROCEDURE [dbo].[LogDynamicConditionStatusStart]
-	@ConditionID UNIQUEIDENTIFIER,
-	@DynamicConditionID INT,
-	@ObjectID UNIQUEIDENTIFIER,
-	@CurrentEvaluationStartTimeUtc DATETIME,
-	@CurrentEvaluationType TINYINT
-AS
-	RETURN;
-GO
-
-ALTER PROCEDURE [dbo].[LogDynamicConditionStatusEnd]
-	@ConditionID UNIQUEIDENTIFIER,
-	@DynamicConditionID INT,
-	@ObjectID UNIQUEIDENTIFIER,
-	@LastEvaluationStartTimeUtc DATETIME,
-	@LastEvaluationEndTimeUtc DATETIME,
-	@LastEvaluationDuratioUnTicks BIGINT,
-	@LastEvaluationResults NVARCHAR(MAX),
-	@LastEvaluationState TINYINT,
-	@DynamicConditionEvaluationResult TINYINT,
-	@LastEvaluationException NVARCHAR(MAX)
-AS
-	RETURN;
 GO
 
 SET IDENTITY_INSERT [DynamicConditionStatus] ON
@@ -458,4 +470,3 @@ INNER JOIN sys.objects AS o
 WHERE referenced_id = OBJECT_ID(N'DynamicConditionStatus')
   AND referenced_minor_id = 0; 
 */
-
