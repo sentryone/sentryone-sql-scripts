@@ -299,3 +299,13 @@ BEGIN
 END
 GO
 
+GRANT EXECUTE ON [dbo].[fnRollupLevelForRangeSizeInMinutes] TO [allow_all]
+GO
+GRANT EXECUTE ON [dbo].[fnRollupLevelForRangeSizeInMinutes] TO [allow_least_privilege]
+GO
+GRANT EXECUTE ON [dbo].[fnRollupLevelForRangeSizeAndCounterInMinutes] TO [allow_all]
+GO
+GRANT EXECUTE ON [dbo].[fnRollupLevelForRangeSizeAndCounterInMinutes] TO [allow_least_privilege]
+GO
+
+
