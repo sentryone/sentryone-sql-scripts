@@ -306,6 +306,28 @@ BEGIN
 END
 GO
 
+-- Add permissions for the allow_all and allow_least_privilege Roles
+GRANT
+	EXECUTE
+	ON [dbo].[LogDynamicConditionStatusEnd]
+	TO allow_all;
+GO
+GRANT
+	EXECUTE
+	ON [dbo].[LogDynamicConditionStatusStart]
+	TO allow_all;
+GO
+GRANT
+	SELECT,INSERT,UPDATE,DELETE
+	ON [dbo].[DynamicConditionStatus]
+	TO allow_all;
+Go
+GRANT
+	SELECT
+	ON [dbo].[DynamicConditionStatus]
+	TO allow_least_privilege;
+GO
+
 --Recompile dependent objects
 exec sp_recompile 'dbo.LogDynamicConditionStatusStart';
 GO
@@ -457,6 +479,28 @@ ELSE
 	)
 
 COMMIT TRANSACTION
+GO
+
+-- Add permissions for the allow_all and allow_least_privilege Roles
+GRANT
+	EXECUTE
+	ON [dbo].[LogDynamicConditionStatusEnd]
+	TO allow_all;
+GO
+GRANT
+	EXECUTE
+	ON [dbo].[LogDynamicConditionStatusStart]
+	TO allow_all;
+GO
+GRANT
+	SELECT,INSERT,UPDATE,DELETE
+	ON [dbo].[DynamicConditionStatus]
+	TO allow_all;
+Go
+GRANT
+	SELECT
+	ON [dbo].[DynamicConditionStatus]
+	TO allow_least_privilege;
 GO
 */
 
