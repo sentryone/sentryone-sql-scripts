@@ -6,9 +6,9 @@ SELECT ID, ObjectName FROM EventSourceConnection WHERE ObjectName LIKE 'serverna
 */
 
 SELECT
-	 @StartDate =					'2020-08-01 00:00:00'
-	,@EndDate =						'2020-08-02 00:00:00'
-	,@EventSourceConnectionID =		206;
+	 @StartDate =			'2020-08-01 00:00:00'
+	,@EndDate =			'2020-08-02 00:00:00'
+	,@EventSourceConnectionID =	206;
 
 ;WITH UniqueSessions
 AS
