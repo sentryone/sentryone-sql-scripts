@@ -18,6 +18,9 @@ Output:
 	RunningPageRowsPct	% of total for running row count
 */
 
+--Restrict rows returned when many unique page counts. Adjust up/down as needed.
+DECLARE @MaxRows INT = 10000;
+
 ;WITH PageCounts
 AS
 (
@@ -40,15 +43,20 @@ AS
 		+ InternalObjectsAllocPageCount
 		+ TaskInternalObjectsAllocPageCount
 )
-SELECT
-	 NTILE(100) OVER(ORDER BY PageCt) AS PageCtPctile 
-	,PageCt
-	,SumPages
-	,PageRows
-	,SUM(SumPages) OVER(ORDER BY PageCt ROWS UNBOUNDED PRECEDING) AS RunningSumPages
-	,SUM(PageRows) OVER(ORDER BY PageCt ROWS UNBOUNDED PRECEDING) AS RunningPageRows
-	,CAST(CAST(SUM(SumPages) OVER(ORDER BY PageCt ROWS UNBOUNDED PRECEDING) AS FLOAT) / SUM(SumPages) OVER() AS DECIMAL(5,5)) AS RunningSumPagesPct
-	,CAST(CAST(SUM(PageRows) OVER(ORDER BY PageCt ROWS UNBOUNDED PRECEDING) AS FLOAT) / SUM(PageRows) OVER() AS DECIMAL(5,5)) AS RunningPageRowsPct
-FROM PageCounts
-ORDER BY
-	PageCt;
+SELECT TOP (@MaxRows) *
+FROM
+	(
+	SELECT TOP 100 PERCENT
+		 NTILE(100) OVER(ORDER BY PageCt) AS PageCtPctile 
+		,PageCt
+		,SumPages
+		,PageRows
+		,SUM(SumPages) OVER(ORDER BY PageCt ROWS UNBOUNDED PRECEDING) AS RunningSumPages
+		,SUM(PageRows) OVER(ORDER BY PageCt ROWS UNBOUNDED PRECEDING) AS RunningPageRows
+		,CAST(CAST(SUM(SumPages) OVER(ORDER BY PageCt ROWS UNBOUNDED PRECEDING) AS FLOAT) / SUM(SumPages) OVER() AS DECIMAL(5,5)) AS RunningSumPagesPct
+		,CAST(CAST(SUM(PageRows) OVER(ORDER BY PageCt ROWS UNBOUNDED PRECEDING) AS FLOAT) / SUM(PageRows) OVER() AS DECIMAL(5,5)) AS RunningPageRowsPct
+	FROM PageCounts
+	ORDER BY
+		PageCt
+	) t
+ORDER BY t.PageCt;
