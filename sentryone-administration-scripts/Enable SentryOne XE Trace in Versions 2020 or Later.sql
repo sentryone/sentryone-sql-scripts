@@ -1,4 +1,6 @@
---https://docs.sentryone.com/help/enabling-extended-events
+/*
+  https://docs.sentryone.com/help/enabling-extended-events
+*/
 
 --Disable old xe trace, if exists and enabled
 IF EXISTS
