@@ -1,0 +1,60 @@
+;
+WITH FriendlyName
+AS
+(
+	SELECT
+		esc.ID AS EventSourceId
+		, esc.ServerName
+		, d.DatabaseID
+		, d.Name AS DbName
+		, t.TableID
+		, t.TableName
+		, i.IndexID
+		, i.IndexName
+		, CONCAT_WS('.', d.DatabaseID,t.TableID,i.IndexID) AS InstanceName
+	FROM
+		dbo.PerformanceAnalysisSqlIndexPartition AS p
+		JOIN dbo.PerformanceAnalysisSqlDatabase AS d
+			ON p.EventSourceConnectionID = d.EventSourceConnectionID
+			   AND p.DatabaseID = d.DatabaseID
+		JOIN dbo.PerformanceAnalysisSqlTable AS t
+			ON p.EventSourceConnectionID = t.EventSourceConnectionID
+			   AND p.DatabaseID = t.DatabaseID
+			   AND p.TableID = t.TableID
+		JOIN dbo.PerformanceAnalysisSqlIndex AS i
+			ON p.EventSourceConnectionID = i.EventSourceConnectionID
+			   AND p.DatabaseID = i.DatabaseID
+			   AND p.TableID = i.TableID
+			   AND p.IndexID = i.IndexID
+		JOIN dbo.EventSourceConnection AS esc
+			ON esc.ID = d.EventSourceConnectionID
+)
+SELECT 
+	fn.ServerName
+	, ca.UTCTime
+	, padtaic.Value
+	, pac.CounterResourceName
+	, pac.CounterName
+	, padtaic.InstanceName
+	, fn.DbName
+	, fn.TableName
+	, fn.IndexName
+FROM 
+	dbo.PerformanceAnalysisCounterCategory AS pacc
+	JOIN dbo.PerformanceAnalysisCounter AS pac
+		ON pac.PerformanceAnalysisCounterCategoryID = pacc.ID
+	JOIN dbo.PerformanceAnalysisDataTableAndIndexCounter AS padtaic
+		ON padtaic.PerformanceAnalysisCounterID = pac.ID
+	JOIN FriendlyName AS fn
+		ON fn.EventSourceId = padtaic.EventSourceConnectionID
+		AND fn.InstanceName = padtaic.InstanceName
+	CROSS APPLY 
+	(
+		VALUES (DATEADD(SECOND, padtaic.Timestamp * 5, DATETIMEFROMPARTS(2000,1,1,0,0,0,0)))
+	) ca(UTCTime)
+WHERE 
+	pacc.CategoryName = N'SQL Server Indexes'
+	AND padtaic.Value > 0
+	AND fn.ServerName = N'ServerName'
+	AND fn.DbName = N'dbName'
+	AND fn.TableName = N'schema.table'
